@@ -4,8 +4,15 @@ require "digest/sha2"
 begin
   require "digest/hmac"
 rescue LoadError
-  require "hmac/sha1"
-  require "hmac/sha2"
+  begin
+    # Try loading the ruby-hmac files if they exist
+    require "hmac-sha1"
+    require "hmac-sha2"
+  rescue LoadError
+    # Nothing exists use included hmac files
+    require "hmac/sha1"
+    require "hmac/sha2"
+  end
 end
 
 module OpenID
@@ -30,7 +37,7 @@ module OpenID
     end
 
     def CryptUtil.hmac_sha1(key, text)
-      if Digest.const_defined? :HMAC      
+      if Digest.const_defined? :HMAC
         Digest::HMAC.new(key,Digest::SHA1).update(text).digest
       else
         return HMAC::SHA1.digest(key, text)
@@ -42,7 +49,7 @@ module OpenID
     end
 
     def CryptUtil.hmac_sha256(key, text)
-      if Digest.const_defined? :HMAC      
+      if Digest.const_defined? :HMAC
         Digest::HMAC.new(key,Digest::SHA256).update(text).digest
       else
         return HMAC::SHA256.digest(key, text)
@@ -92,6 +99,17 @@ module OpenID
     # Decode a base64 byte string to a number.
     def CryptUtil.base64_to_num(s)
       return binary_to_num(OpenID::Util.from_base64(s))
+    end
+
+    def CryptUtil.const_eq(s1, s2)
+      if s1.length != s2.length
+        return false
+      end
+      result = true
+      s1.length.times do |i|
+        result &= (s1[i] == s2[i])
+      end
+      return result
     end
   end
 end
